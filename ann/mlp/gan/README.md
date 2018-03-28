@@ -3,5 +3,5 @@ I have network architecture used exactly same as in the paper but with small dif
 I keep track of loss values for generator and discriminator to check the network performance over time.
 As given in the theorem 1 of the paper, loss values that I achieved are pretty close to ideal loss values for the GAN.
 Figure below show the loss upon training for 30 epochs and generated images after that.
-<img src="./loss.png" width=400px height=400px>
-<img src="./g.png"  width=400px height=400px>
+<img src="./loss.png" width=600px height=500px>
+<img src="./g.png"  width=600px height=500px>
