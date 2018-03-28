@@ -1,11 +1,4 @@
 """
-- [Doing] Implement Goodfellow like GAN network in floating point
-- [To Do] Find metric to evaluate GAN
-- [To Do] Achieve reasonably good results
-- [To Do] Convert it to PCM version using pypcm
-"""
-
-"""
 Goodfellow description - https://github.com/goodfeli/adversarial/blob/master/mnist.yaml
 - Use only 50,000 samples from the MNIST dataset
 - Generator network:
