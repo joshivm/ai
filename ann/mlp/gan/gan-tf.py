@@ -1,5 +1,5 @@
 """
-Goodfellow description - https://github.com/goodfeli/adversarial/blob/master/mnist.yaml
+Goodfellow et. al. 2014, description - https://github.com/goodfeli/adversarial/blob/master/mnist.yaml
 - Use only 50,000 samples from the MNIST dataset
 - Generator network:
     Sample from uniform distribution
@@ -30,9 +30,9 @@ from utils.ops import ops
 from utils.draw import draw
 from utils.log import logging
 from tensorflow.examples.tutorials.mnist import input_data
-mnist = input_data.read_data_sets("../../data/mnist-tf/");
+mnist = input_data.read_data_sets("./");
 
-path = "/home/vinay/Dropbox/Vinay/vinay_work/PPT/IBM/23-mar-2018/figs/"
+path = "./figs/"
 op = ops(tf.float32)
 plt = draw(path=path,size=25)
 ############################ Input
@@ -142,7 +142,7 @@ sess = tf.InteractiveSession()
 sess.run(tf.global_variables_initializer())
 
 ############################ Logging
-logs = logging(sess,"../../output/gan-mlp-mnist/")
+logs = logging(sess,"./")
 
 scalars = [[D_loss,'D_loss'],[G_loss,'G_loss']]
 hists = [
@@ -170,7 +170,7 @@ for i in range(epochs):
     gloss.append(gl)
 
 pred = sess.run(G(Z),feed_dict={Z:op.sample_noise([G_layers[0],100],"normal"),pl_train:False,reuse:True})
-plt.show_imgs(pred[:,0:16],"gray",name="gan-result-04")
+plt.show_imgs(pred[:,0:16],"gray",name="gan-result")
 plt.lines([range(epochs),range(epochs),range(epochs),range(epochs)],[dloss,gloss,2*0.693*np.ones(epochs),0.693*np.ones(epochs)],\
           ["D Loss","G Loss","1.386","0.693"],["-*","-o","--","--"],\
-          "GAN MLP training loss","Epoch","Binary crossentropy loss",int_tick=True,loc="upper right",name="gan-loss-04")
+          "GAN MLP training loss","Epoch","Binary crossentropy loss",int_tick=True,loc="upper right",name="gan-loss")
