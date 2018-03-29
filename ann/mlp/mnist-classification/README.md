@@ -1,3 +1,10 @@
+This folder contains code using two frameworks namely tensorflow and numpy.
+Tensorflow version is mnist-classification.py and rest of the files are for numpy based implementation.
+
+Following figure shows results obtained with tensorflow version.
+
+<img src="./mlp" width="600" height="500">
+
 Network.ipynb file is example implementation of the network class that is built in network.py. Any suggestions/comments/bug-reports are always welcome.
 
 - [MLP](https://github.com/vinayjoshi22/ai/tree/master/ann/mlp) : Code contains python class for mlp. Network.ipynb is an example file demonstrating use of class network.py that implements mlp. Simple use for [MNIST dataset](https://pjreddie.com/projects/mnist-in-csv/) network is as follows,
