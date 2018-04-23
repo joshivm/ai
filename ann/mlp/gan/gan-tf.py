@@ -1,28 +1,27 @@
-"""
-Goodfellow et. al. 2014, description - https://github.com/goodfeli/adversarial/blob/master/mnist.yaml
-- Use only 50,000 samples from the MNIST dataset
-- Generator network:
-    Sample from uniform distribution
-    layers : [100,1200,1200,784]
-    activation:[None,Relu,Relu,sigmoid]
-    w_init : [-0.05,0.05]
+# Goodfellow et. al. 2014, description - https://github.com/goodfeli/adversarial/blob/master/mnist.yaml
+# - Use only 50,000 samples from the MNIST dataset
+# - Generator network:
+#     Sample from uniform distribution
+#     layers : [100,1200,1200,784]
+#     activation:[None,Relu,Relu,sigmoid]
+#     w_init : [-0.05,0.05]
+#
+# - Discriminator network:
+#     layers: [784,240,240,1]
+#     dropout:[0.5,0.8] - first try network without dropouts
+#     scale: [2.,1.25] - try scaling up and scaling down
+#     activation: [None,Maxout,Maxout,sigmoid]
+#     w_init: [-0.005,0.005]
+#     num_pieces = 5,5
+# - batch_size = 100
+# - learning_rate = 0.1
+# - learning_rule = Momentum, init = 0.5
+# - Exponential decay with factor of 1.000004 and min lr = .000001
+# - Momentum adjustor: start 1, saturate 250, final 0.7
 
-- Discriminator network:
-    layers: [784,240,240,1]
-    dropout:[0.5,0.8] - first try network without dropouts
-    scale: [2.,1.25] - try scaling up and scaling down
-    activation: [None,Maxout,Maxout,sigmoid]
-    w_init: [-0.005,0.005]
-    num_pieces = 5,5
-- batch_size = 100
-- learning_rate = 0.1
-- learning_rule = Momentum, init = 0.5
-- Exponential decay with factor of 1.000004 and min lr = .000001
-- Momentum adjustor: start 1, saturate 250, final 0.7
-"""
 ################### Ignore future warning
-import os
-os.environ["TF_CPP_MIN_LOG_LEVEL"]="3"
+# import os
+# os.environ["TF_CPP_MIN_LOG_LEVEL"]="3"
 ################### Required imports
 import tensorflow as tf
 import numpy as np
@@ -30,13 +29,13 @@ from utils.ops import ops
 from utils.draw import draw
 from utils.log import logging
 from tensorflow.examples.tutorials.mnist import input_data
-mnist = input_data.read_data_sets("./");
+mnist = input_data.read_data_sets("/home/vinay/Dropbox/Vinay/vinay_work/datasets/mnist/",one_hot=True);
 
 path = "./figs/"
 op = ops(tf.float32)
 plt = draw(path=path,size=25)
 ############################ Input
-epochs = 30
+epochs = 100
 batch_size = 100
 inp_range = 500
 tf.set_random_seed(80)
@@ -96,7 +95,7 @@ def G(z):
     ga2_b = op.batch_norm(ga2,pl_train,reuse,"gbatch2")
 
     gz3 = op.matmul(Gw3,ga2_b) +Gb3
-    ga3 = op.activation(gz3,"sigmoid")
+    ga3 = op.activation(gz3,"tanh")
     return ga3
 
 def D(x):
@@ -105,9 +104,11 @@ def D(x):
     dz1 = op.matmul(Dw1,x) +Db1
     da1 = op.activation(dz1,"relu")
     # da1_d = op.dropout(da1,0.8)
+    # da1 = tf.contrib.layers.maxout(dz1,5)
 
     dz2 = op.matmul(Dw2,da1) +Db2
     da2 = op.activation(dz2,"relu")
+    # da2 = tf.contrib.layers.maxout(dz2,5)
 
     dz3 = op.matmul(Dw3,da2) +Db3
     da3 = op.activation(dz3,"sigmoid")
@@ -117,9 +118,13 @@ def D(x):
 D_fake,D_logits_fake = D(G(Z))
 D_real,D_logits_real = D(X)
 
-real_ones = tf.ones_like(D_real,dtype=tf.float32)
-fake_zeros = tf.zeros_like(D_fake,dtype=tf.float32)
-fake_ones = tf.ones_like(D_fake,dtype=tf.float32)
+# real_ones =   tf.random_uniform(D_real.get_shape().as_list(),minval=0.7,maxval=1.2) #tf.ones_like(D_real,dtype=tf.float32)
+# fake_zeros =  tf.random_uniform(D_real.get_shape().as_list(),minval=0.0,maxval=0.3) #tf.zeros_like(D_fake,dtype=tf.float32)
+# fake_ones =   tf.random_uniform(D_real.get_shape().as_list(),minval=0.7,maxval=1.2) #tf.ones_like(D_fake,dtype=tf.float32)
+
+real_ones =   tf.ones_like(D_real,dtype=tf.float32)
+fake_zeros =  tf.zeros_like(D_fake,dtype=tf.float32)
+fake_ones =   tf.ones_like(D_fake,dtype=tf.float32)
 
 D_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=real_ones,logits=D_logits_real))
                 #op.errorfn(real_ones,D_real,efn="categorical_crossentropy")
@@ -131,10 +136,13 @@ D_loss = D_loss_real + D_loss_fake
 G_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=fake_ones,logits=D_logits_fake))
             #op.errorfn(fake_ones,D_fake,efn="categorical_crossentropy")
 
-D_optimizer = tf.train.MomentumOptimizer(D_lr,0.5).minimize(D_loss,var_list=D_list)
-                #op.optimizer(D_loss,D_lr,"Adam",var_list=D_list)
-G_optimizer = tf.train.MomentumOptimizer(G_lr,0.5).minimize(G_loss,var_list=G_list)
-                #op.optimizer(G_loss,G_lr,"Adam",var_list=G_list)
+D_optimizer = tf.contrib.opt.PowerSignOptimizer(D_lr).minimize(D_loss,var_list=D_list)
+G_optimizer = tf.contrib.opt.PowerSignOptimizer(G_lr).minimize(G_loss,var_list=G_list)
+
+# D_optimizer = tf.train.MomentumOptimizer(D_lr,0.5).minimize(D_loss,var_list=D_list)
+# G_optimizer = tf.train.MomentumOptimizer(G_lr,0.5).minimize(G_loss,var_list=G_list)
+# D_optimizer = tf.train.MomentumOptimizer(0.001,0.5).minimize(D_loss,var_list=D_list)
+# G_optimizer = tf.train.MomentumOptimizer(1e-3).minimize(G_loss,var_list=G_list)
 
 
 ############################ Training
@@ -142,15 +150,15 @@ sess = tf.InteractiveSession()
 sess.run(tf.global_variables_initializer())
 
 ############################ Logging
-logs = logging(sess,"./")
-
-scalars = [[D_loss,'D_loss'],[G_loss,'G_loss']]
-hists = [
-    [Gw1,'Gw1'],[Gb1,'Gb1'],[Gw2,'Gw2'],[Gb2,'Gb2'],[Gw3,'Gw3'],[Gb3,'Gb3'],
-        [Dw1,'Dw1'],[Db1,'Db1'],[Dw2,'Dw2'],[Db2,'Db2'],[Dw3,'Dw3'],[Db3,'Db3'],
-        [D_real,'D_real'],[D_fake,'D_fake']
-]
-logs.set(scalars,hists)
+# logs = logging(sess,"./")
+#
+# scalars = [[D_loss,'D_loss'],[G_loss,'G_loss']]
+# hists = [
+#     [Gw1,'Gw1'],[Gb1,'Gb1'],[Gw2,'Gw2'],[Gb2,'Gb2'],[Gw3,'Gw3'],[Gb3,'Gb3'],
+#         [Dw1,'Dw1'],[Db1,'Db1'],[Dw2,'Dw2'],[Db2,'Db2'],[Dw3,'Dw3'],[Db3,'Db3'],
+#         [D_real,'D_real'],[D_fake,'D_fake']
+# ]
+# logs.set(scalars,hists)
 
 ############################
 
@@ -160,17 +168,17 @@ gloss = list()
 for i in range(epochs):
     for j in range(inp_range):
         bn = mnist.train.next_batch(batch_size)
-        feedD = {X:bn[0].T,Z:op.sample_noise([G_layers[0],batch_size],"normal"),pl_train:True,reuse:False}
+        feedD = {X:((bn[0]-0.5)/0.5).T,Z:op.sample_noise([G_layers[0],batch_size],"normal"),pl_train:True,reuse:False}
         dl,_ = sess.run([D_loss,D_optimizer],feed_dict=feedD)
         feedG = {Z:op.sample_noise([G_layers[0],batch_size],"normal"),pl_train:True,reuse:False}
         gl,_ = sess.run([G_loss,G_optimizer],feed_dict=feedG)
-    logs.add_summary(feedD,i)
+    # logs.add_summary(feedD,i)
     print("EP:"+str(i)," ",op.parse(dl)," ",op.parse(gl))
     dloss.append(dl)
     gloss.append(gl)
 
-pred = sess.run(G(Z),feed_dict={Z:op.sample_noise([G_layers[0],100],"normal"),pl_train:False,reuse:True})
-plt.show_imgs(pred[:,0:16],"gray",name="gan-result")
+pred = sess.run(G(Z),feed_dict={Z:op.sample_noise([G_layers[0],batch_size],"normal"),pl_train:False,reuse:True})
+plt.show_imgs(pred[:,0:16],"gray")
 plt.lines([range(epochs),range(epochs),range(epochs),range(epochs)],[dloss,gloss,2*0.693*np.ones(epochs),0.693*np.ones(epochs)],\
           ["D Loss","G Loss","1.386","0.693"],["-*","-o","--","--"],\
-          "GAN MLP training loss","Epoch","Binary crossentropy loss",int_tick=True,loc="upper right",name="gan-loss")
+          "GAN MLP training loss","Epoch","Binary crossentropy loss",int_tick=True,loc="upper right")
